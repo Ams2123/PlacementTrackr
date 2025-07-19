@@ -1,35 +1,26 @@
 FROM python:3.10-slim
 
-# System dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     poppler-utils \
     build-essential \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry manually (recommended way)
-ENV POETRY_VERSION=1.8.2
-RUN curl -sSL https://install.python-poetry.org | python3 -
-
-# Add poetry to path
-ENV PATH="/root/.local/bin:$PATH"
-
-# Set working directory
+# Set work directory
 WORKDIR /app
 
-# Copy only dependency files first for caching
-COPY pyproject.toml poetry.lock* ./
+# Copy dependency file first (for caching)
+COPY requirements.txt .
 
-# Install Python dependencies without virtualenv
-RUN poetry config virtualenvs.create false && \
-    poetry install --no-dev --no-interaction --no-ansi
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Now copy the full app
+# Copy the rest of your code
 COPY . .
 
-# Expose app port
+# Expose port (change 8000 if your app uses a different port)
 EXPOSE 8000
 
-# Start the FastAPI app
+# Start your app (adjust if your entrypoint is not main.py or FastAPI)
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
