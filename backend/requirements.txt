@@ -6,3 +6,4 @@ pdf2image
 spacy==3.7.2
 Pillow
 requests
+en-core-web-sm==3.7.1
