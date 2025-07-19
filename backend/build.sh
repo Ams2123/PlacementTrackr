@@ -8,7 +8,7 @@ echo "--- Starting build process ---"
 # 1. Install system dependencies using yum
 echo "--- Installing system dependencies (tesseract, poppler) ---"
 yum update -y
-yum install -y tesseract poppler-utils
+yum install -y tesseract-ocr poppler-utils
 
 # 2. Install Python dependencies
 echo "--- Installing Python dependencies from requirements.txt ---"
