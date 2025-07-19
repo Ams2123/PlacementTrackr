@@ -9,7 +9,8 @@ echo "--- Starting build process ---"
 echo "--- Installing system dependencies (tesseract, poppler) ---"
 # Update yum and enable the EPEL repository which contains tesseract
 yum update -y
-amazon-linux-extras install epel -y
+# Install the 'epel-release' package to configure the repository
+yum install -y epel-release
 
 # Now install tesseract and poppler-utils from the enabled repository
 yum install -y tesseract poppler-utils
