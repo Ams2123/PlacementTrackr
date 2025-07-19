@@ -5,15 +5,13 @@ set -e
 
 echo "--- Starting build process ---"
 
-# 1. Install system dependencies
+# 1. Install system dependencies (without sudo)
 echo "--- Installing system dependencies (tesseract, poppler) ---"
-sudo apt-get update
-sudo apt-get install -y tesseract-ocr poppler-utils
+apt-get update
+apt-get install -y tesseract-ocr poppler-utils
 
 # 2. Install Python dependencies
 echo "--- Installing Python dependencies from requirements.txt ---"
 pip install -r requirements.txt
 
-
-
-echo "--- Build script finished successfully!!! ---"
+echo "--- Build script finished successfully! ---"
