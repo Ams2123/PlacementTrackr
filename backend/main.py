@@ -10,29 +10,26 @@ import pytesseract
 from pdf2image import convert_from_bytes
 from PIL import Image
 
-# --- NEW: Import the spaCy model directly as a package ---
-# This is more reliable in serverless environments.
+# --- Import the spaCy model directly as a package ---
 import en_core_web_sm
 
 # --- API SETUP ---
 app = FastAPI(
     title="Resume Parser API",
     description="An API to extract structured information from resume files (PDFs or Images) using OCR and NLP.",
-    version="2.0.0",
+    version="3.0.0",
 )
 
 # --- CORS MIDDLEWARE ---
-# This allows your frontend (e.g., http://localhost:8080) to call the API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # --- MODEL LOADING ---
-# --- NEW: Load the model from the imported package ---
 try:
     nlp = en_core_web_sm.load()
 except Exception as e:
@@ -51,34 +48,41 @@ class ResumeData(BaseModel):
     raw_text: str = Field(..., description="The full raw text extracted from the resume.")
 
 # --- HELPER FUNCTIONS ---
-# (No changes to the helper functions below)
 
 def extract_text_from_file(file_bytes: bytes, content_type: str) -> str:
+    """
+    Converts a file (PDF or image) into raw text using OCR.
+    """
     full_text = ""
     try:
         if content_type == "application/pdf":
-            images = convert_from_bytes(file_bytes, dpi=300)
+            # --- FIX: Explicitly provide the poppler_path for serverless environments ---
+            # The build script installs poppler to /usr/bin, so we point to it directly.
+            images = convert_from_bytes(file_bytes, dpi=300, poppler_path="/usr/bin")
             for image in images:
                 full_text += pytesseract.image_to_string(image) + "\n"
         elif content_type.startswith("image/"):
             image = Image.open(io.BytesIO(file_bytes))
             full_text = pytesseract.image_to_string(image)
         else:
-            # Added support for DOCX by simply rejecting it with a clear message
             if "wordprocessingml" in content_type:
                  raise HTTPException(status_code=400, detail="DOCX files are not supported. Please upload a PDF or Image.")
             raise HTTPException(status_code=400, detail=f"Unsupported file type: {content_type}")
     except Exception as e:
-        # Pass along the specific exception message
         if isinstance(e, HTTPException):
             raise e
+        # Provide a more specific error message for the poppler issue.
+        if "poppler" in str(e).lower():
+            raise HTTPException(status_code=500, detail=f"PDF processing failed. Poppler might not be installed correctly in the deployment environment. Original error: {e}")
         raise HTTPException(status_code=500, detail=f"Error processing file: {e}")
     return full_text
 
 def parse_resume_text(text: str) -> ResumeData:
+    """
+    Parses raw text to extract structured data.
+    """
     name = None
     if nlp:
-        # Limit the initial doc for name processing to the first 500 characters for efficiency
         doc = nlp(text[:500])
         for ent in doc.ents:
             if ent.label_ == "PERSON":
@@ -137,8 +141,10 @@ def parse_resume_text(text: str) -> ResumeData:
 # --- API ENDPOINT ---
 @app.post("/parse-resume/", response_model=ResumeData, tags=["Resume Parsing"])
 async def parse_resume(file: UploadFile = File(...)):
+    """
+    Upload a resume file (PDF or Image) to extract its content.
+    """
     if not nlp:
-        # This is the error you were seeing. It triggers if `nlp` is None.
         raise HTTPException(status_code=503, detail="NLP model is not available. Server setup is incomplete.")
     
     file_bytes = await file.read()
