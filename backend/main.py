@@ -9,7 +9,7 @@ from typing import List, Optional
 import pytesseract
 from pdf2image import convert_from_bytes
 from PIL import Image
-
+from fastapi.middleware.cors import CORSMiddleware
 
 try:
     nlp = spacy.load("en_core_web_sm")
@@ -22,6 +22,22 @@ app = FastAPI(
     title="Resume Parser API",
     description="An API to extract structured information from resume files (PDFs or Images) using OCR and NLP.",
     version="1.0.0",
+)
+
+origins = [
+    "http://localhost:8080", # Your local development origin
+    "http://localhost:3000", # Common React dev server port
+    "http://localhost:5173", # Common Vite/React dev server port
+    # You can add your deployed frontend URL here as well
+    # "https://your-frontend-domain.com", 
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"], # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"], # Allows all headers
 )
 
 # --- Pydantic Models for Structured Output ---
