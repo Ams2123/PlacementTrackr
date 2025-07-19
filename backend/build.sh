@@ -14,8 +14,6 @@ sudo apt-get install -y tesseract-ocr poppler-utils
 echo "--- Installing Python dependencies from requirements.txt ---"
 pip install -r requirements.txt
 
-# 3. Download the spaCy model
-echo "--- Downloading spaCy model (en_core_web_sm) ---"
-python -m spacy download en_core_web_sm
+
 
 echo "--- Build script finished successfully! ---"
