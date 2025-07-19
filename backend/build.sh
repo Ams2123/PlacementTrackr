@@ -1,21 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Exit on error
+set -o errexit
 
-# Exit immediately if a command exits with a non-zero status.
-set -e
+echo "--- Starting Render build process ---"
 
-echo "--- Starting build process ---"
-
-# 1. Install system dependencies using yum
+# 1. Install system dependencies using apt-get
+# Render's native environment is Debian-based, so we use apt-get.
 echo "--- Installing system dependencies (tesseract, poppler) ---"
-# Update yum and enable the EPEL repository which contains tesseract
-yum update -y
-# Install the 'epel-release' package to configure the repository
-yum install -y epel-release
-
-# Now install tesseract and poppler-utils from the enabled repository
-yum install -y tesseract poppler-utils
+apt-get update
+apt-get install -y tesseract-ocr poppler-utils
 
 # 2. Install Python dependencies
+# Render can do this automatically, but running it here ensures it
+# happens after the system dependencies are ready.
 echo "--- Installing Python dependencies from requirements.txt ---"
 pip install -r requirements.txt
 
