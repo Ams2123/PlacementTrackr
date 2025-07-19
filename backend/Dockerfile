@@ -1,26 +1,35 @@
 FROM python:3.10-slim
 
-# Install OCR dependencies
+# System dependencies
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     poppler-utils \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry manually (recommended way)
+ENV POETRY_VERSION=1.8.2
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
+# Add poetry to path
+ENV PATH="/root/.local/bin:$PATH"
 
 # Set working directory
 WORKDIR /app
 
-# Install Python dependencies using Poetry
-COPY pyproject.toml poetry.lock ./
-RUN pip install --no-cache-dir poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-dev
+# Copy only dependency files first for caching
+COPY pyproject.toml poetry.lock* ./
 
-# Copy all app files
+# Install Python dependencies without virtualenv
+RUN poetry config virtualenvs.create false && \
+    poetry install --no-dev --no-interaction --no-ansi
+
+# Now copy the full app
 COPY . .
 
-# Run FastAPI app with Uvicorn
+# Expose app port
+EXPOSE 8000
+
+# Start the FastAPI app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
